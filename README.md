@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 会議室予約システム
 
-## Getting Started
+Next.js + Supabase + Tailwind CSS で構築した会議室（1室）の予約管理システムです。
 
-First, run the development server:
+## 機能
+
+- 予約の一覧表示（リスト / 週間 / 月間ビュー）
+- 未ログインでも予約一覧を閲覧可能
+- ログインユーザーは自分の予約を作成・編集・削除
+- 15分単位、月〜金 9:00〜18:00 の予約（複数スロット連続可）
+- タグによる分類・フィルター
+- 管理者によるユーザー管理・全予約管理
+
+## セットアップ
+
+### 1. 依存関係のインストール
+
+```bash
+npm install
+```
+
+### 2. Supabase プロジェクトの作成
+
+1. [Supabase](https://supabase.com) でプロジェクトを作成
+2. SQL Editor で `supabase/migrations/001_initial_schema.sql` を実行
+3. Authentication > Providers で Email を有効化
+
+### 3. 環境変数
+
+`.env.local.example` を `.env.local` にコピーして値を設定:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+`SUPABASE_SERVICE_ROLE_KEY` は管理者によるユーザーの作成・削除に必要です（サーバーサイドのみで使用）。
+
+### 4. 初回管理者の設定
+
+ユーザー登録後、Supabase SQL Editor で以下を実行:
+
+```sql
+UPDATE profiles SET role = 'admin' WHERE id = 'your-user-uuid';
+```
+
+### 5. 開発サーバー起動
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+http://localhost:3000 でアクセスできます。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 技術スタック
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Next.js 16 (App Router)
+- Supabase (Auth, PostgreSQL, RLS)
+- Tailwind CSS 4
+- date-fns / date-fns-tz
 
-## Learn More
+## ディレクトリ構成
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+app/              # ページ・Server Actions
+components/       # UIコンポーネント
+lib/              # ユーティリティ・Supabase クライアント
+supabase/         # DBマイグレーション
+```
