@@ -3,34 +3,15 @@
 import { useEffect } from "react";
 import { fetchReservations } from "@/app/actions/reservations";
 import { fetchTags } from "@/app/actions/tags";
-import { startOfMonth, endOfMonth, startOfWeek, endOfWeek } from "@/lib/dates";
+import { startOfMonth, endOfMonth } from "@/lib/dates";
 import { useApp } from "./AppContext";
-import type { ViewMode } from "@/lib/types";
-
-function getDateRange(viewMode: ViewMode, currentDate: Date) {
-  if (viewMode === "month") {
-    const start = startOfMonth(currentDate);
-    const end = endOfMonth(currentDate);
-    return { start, end };
-  }
-
-  if (viewMode === "week") {
-    const start = startOfWeek(currentDate, { weekStartsOn: 1 });
-    const end = endOfWeek(currentDate, { weekStartsOn: 1 });
-    return { start, end: new Date(end.getTime() + 2 * 24 * 60 * 60 * 1000) };
-  }
-
-  const start = startOfMonth(currentDate);
-  const end = endOfMonth(currentDate);
-  return { start, end };
-}
 
 export function DataRefresher() {
-  const { viewMode, currentDate, refreshKey, setReservations, setTags } =
-    useApp();
+  const { currentDate, refreshKey, setReservations, setTags } = useApp();
 
   useEffect(() => {
-    const { start, end } = getDateRange(viewMode, currentDate);
+    const start = startOfMonth(currentDate);
+    const end = endOfMonth(currentDate);
     let cancelled = false;
 
     Promise.all([
@@ -45,7 +26,7 @@ export function DataRefresher() {
     return () => {
       cancelled = true;
     };
-  }, [viewMode, currentDate, refreshKey, setReservations, setTags]);
+  }, [currentDate, refreshKey, setReservations, setTags]);
 
   return null;
 }

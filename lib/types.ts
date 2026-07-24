@@ -28,7 +28,7 @@ export type Reservation = {
   reservation_tags?: { tags: Tag }[];
 };
 
-export type ViewMode = "list" | "week" | "month";
+export type ViewMode = "list" | "month";
 
 export type PanelMode = "empty" | "view" | "create" | "edit";
 

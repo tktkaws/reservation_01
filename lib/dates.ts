@@ -10,7 +10,6 @@ import {
   isSameDay,
   isToday,
   eachDayOfInterval,
-  addDays,
 } from "date-fns";
 import { ja } from "date-fns/locale";
 import { toJst } from "@/lib/slots";
@@ -24,17 +23,8 @@ export function getMonthDays(date: Date): Date[] {
   return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 }
 
-export function getWeekDays(date: Date): Date[] {
-  const weekStart = startOfWeek(date, { weekStartsOn: 1 });
-  return Array.from({ length: 5 }, (_, i) => addDays(weekStart, i));
-}
-
 export function formatMonthYear(date: Date): string {
   return format(toJst(date), "yyyy年M月", { locale: ja });
-}
-
-export function formatDayHeader(date: Date): string {
-  return format(toJst(date), "M/d (EEE)", { locale: ja });
 }
 
 export function formatListDate(date: Date | string): string {
@@ -53,5 +43,4 @@ export {
   isSameMonth,
   isSameDay,
   isToday,
-  addDays,
 };

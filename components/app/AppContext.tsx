@@ -53,7 +53,7 @@ export function AppProvider({
   initialTags: Tag[];
   currentUser: Profile | null;
 }) {
-  const [viewMode, setViewMode] = useState<ViewMode>("week");
+  const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [panel, setPanel] = useState<DetailPanelState>({ mode: "empty" });
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);

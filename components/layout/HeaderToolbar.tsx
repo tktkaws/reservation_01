@@ -6,7 +6,6 @@ import { formatMonthYear } from "@/lib/dates";
 
 const VIEW_LABELS: Record<ViewMode, string> = {
   list: "リスト",
-  week: "週間",
   month: "月間",
 };
 
