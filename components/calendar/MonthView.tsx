@@ -3,8 +3,12 @@
 import { addMinutes } from "date-fns";
 import { getMonthDays, isSameMonth, isToday } from "@/lib/dates";
 import { generateDaySlots, isWeekday, toJst } from "@/lib/slots";
-import { getReservationsForDay } from "@/lib/reservations";
+import {
+  getReservationTags,
+  getReservationsForDay,
+} from "@/lib/reservations";
 import { useApp } from "@/components/app/AppContext";
+import type { Reservation } from "@/lib/types";
 
 const WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"];
 
@@ -19,14 +23,7 @@ export function MonthView() {
 
   const monthDays = getMonthDays(currentDate);
 
-  const handleDayClick = (day: Date) => {
-    const dayReservations = getReservationsForDay(reservations, day);
-
-    if (dayReservations.length > 0) {
-      openViewPanel(dayReservations[0]);
-      return;
-    }
-
+  const handleEmptyDayClick = (day: Date, dayReservations: Reservation[]) => {
     if (!currentUser || !isWeekday(day)) return;
 
     const slots = generateDaySlots(day);
@@ -51,7 +48,7 @@ export function MonthView() {
 
   return (
     <div className="flex-1 overflow-auto p-4">
-      <div className="grid grid-cols-7 gap-px rounded-lg border border-zinc-200 bg-zinc-200 overflow-hidden">
+      <div className="grid grid-cols-7 items-stretch gap-px overflow-hidden rounded-lg border border-zinc-200 bg-zinc-200">
         {WEEKDAYS.map((d) => (
           <div
             key={d}
@@ -66,48 +63,65 @@ export function MonthView() {
           const dayReservations = getReservationsForDay(reservations, day);
           const inMonth = isSameMonth(day, currentDate);
           const weekend = jst.getDay() === 0 || jst.getDay() === 6;
+          const canCreate = Boolean(currentUser && isWeekday(day));
 
           return (
-            <button
+            <div
               key={day.toISOString()}
-              type="button"
-              onClick={() => handleDayClick(day)}
-              className={`min-h-24 bg-white p-2 text-left transition-colors ${
-                inMonth ? "hover:bg-blue-50/50" : "bg-zinc-50/50"
-              } ${isToday(day) ? "ring-2 ring-inset ring-blue-400" : ""} ${
-                currentUser && isWeekday(day) ? "cursor-pointer" : ""
-              }`}
+              className={`flex min-h-24 flex-col bg-white p-2 ${
+                inMonth ? "" : "bg-zinc-50/50"
+              } ${isToday(day) ? "ring-2 ring-inset ring-blue-400" : ""}`}
             >
-              <div
-                className={`mb-1 text-sm font-medium ${
+              <button
+                type="button"
+                onClick={() => handleEmptyDayClick(day, dayReservations)}
+                disabled={!canCreate}
+                className={`mb-1 self-start rounded px-1 text-sm font-medium ${
                   inMonth
                     ? weekend
                       ? "text-zinc-400"
                       : "text-zinc-800"
                     : "text-zinc-300"
-                }`}
+                } ${canCreate ? "hover:bg-blue-50" : "cursor-default"}`}
+                aria-label={`${jst.getMonth() + 1}月${jst.getDate()}日に予約を作成`}
               >
                 {jst.getDate()}
-              </div>
+              </button>
 
               {dayReservations.length > 0 && (
-                <div className="space-y-1">
-                  {dayReservations.slice(0, 3).map((r) => (
-                    <div
-                      key={r.id}
-                      className="truncate rounded bg-blue-100 px-1.5 py-0.5 text-xs text-blue-800"
-                    >
-                      {r.title}
-                    </div>
-                  ))}
-                  {dayReservations.length > 3 && (
-                    <div className="text-xs text-zinc-500">
-                      +{dayReservations.length - 3}件
-                    </div>
-                  )}
+                <div className="flex flex-1 flex-col gap-1">
+                  {dayReservations.map((r) => {
+                    const tags = getReservationTags(r);
+                    const primaryColor = tags[0]?.color ?? "#3B82F6";
+
+                    return (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => openViewPanel(r)}
+                        className="w-full truncate rounded border-l-2 px-1.5 py-0.5 text-left text-xs text-zinc-800 hover:opacity-80"
+                        style={{
+                          borderLeftColor: primaryColor,
+                          backgroundColor: `${primaryColor}18`,
+                        }}
+                        title={r.title}
+                      >
+                        {r.title}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
-            </button>
+
+              {canCreate && dayReservations.length === 0 && (
+                <button
+                  type="button"
+                  onClick={() => handleEmptyDayClick(day, dayReservations)}
+                  className="mt-auto min-h-8 flex-1 cursor-pointer rounded hover:bg-blue-50/50"
+                  aria-label={`${jst.getMonth() + 1}月${jst.getDate()}日に予約を作成`}
+                />
+              )}
+            </div>
           );
         })}
       </div>
