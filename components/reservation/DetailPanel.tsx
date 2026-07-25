@@ -1,28 +1,142 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import {
   createReservation,
   deleteReservation,
   updateReservation,
 } from "@/app/actions/reservations";
-import { formatTimeRange, toJst } from "@/lib/slots";
+import {
+  BUSINESS_END_HOUR,
+  BUSINESS_START_HOUR,
+  SLOT_MINUTES,
+  combineDateAndSlot,
+  dateToSlot,
+  formatSlotLabel,
+  formatTimeRange,
+  getEndSlotGroups,
+  getStartSlotGroups,
+  isSameSlot,
+  isWeekday,
+  slotToMinutes,
+  toJst,
+  validateReservationTime,
+  type TimeSlot,
+} from "@/lib/slots";
 import { getReservationTags } from "@/lib/reservations";
 import { useApp } from "@/components/app/AppContext";
 import type { Reservation } from "@/lib/types";
 
-function toLocalInputValue(date: Date): string {
+function toDateInputValue(date: Date): string {
   const jst = toJst(date);
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${jst.getFullYear()}-${pad(jst.getMonth() + 1)}-${pad(jst.getDate())}T${pad(jst.getHours())}:${pad(jst.getMinutes())}`;
+  return `${jst.getFullYear()}-${pad(jst.getMonth() + 1)}-${pad(jst.getDate())}`;
 }
 
-function fromLocalInputValue(value: string): Date {
-  const [datePart, timePart] = value.split("T");
-  const [year, month, day] = datePart.split("-").map(Number);
-  const [hour, minute] = timePart.split(":").map(Number);
-  const local = new Date(year, month - 1, day, hour, minute);
-  return local;
+function parseDateInput(value: string): { year: number; month: number; day: number } {
+  const [year, month, day] = value.split("-").map(Number);
+  return { year, month: month - 1, day };
+}
+
+function defaultStartSlot(date?: Date): TimeSlot {
+  if (!date) return { hour: BUSINESS_START_HOUR, minute: 0 };
+  const slot = dateToSlot(date);
+  const minutes = slotToMinutes(slot);
+  const startMin = BUSINESS_START_HOUR * 60;
+  const lastStartMin = (BUSINESS_END_HOUR - 1) * 60 + (60 - SLOT_MINUTES);
+  if (minutes < startMin) return { hour: BUSINESS_START_HOUR, minute: 0 };
+  if (minutes > lastStartMin) {
+    return { hour: BUSINESS_END_HOUR - 1, minute: 60 - SLOT_MINUTES };
+  }
+  return {
+    hour: slot.hour,
+    minute: Math.floor(slot.minute / SLOT_MINUTES) * SLOT_MINUTES,
+  };
+}
+
+function defaultEndSlot(start: TimeSlot, date?: Date): TimeSlot {
+  if (date) {
+    const slot = dateToSlot(date);
+    if (slotToMinutes(slot) > slotToMinutes(start)) {
+      return {
+        hour: slot.hour,
+        minute: Math.floor(slot.minute / SLOT_MINUTES) * SLOT_MINUTES,
+      };
+    }
+  }
+  const next = slotToMinutes(start) + SLOT_MINUTES;
+  return { hour: Math.floor(next / 60), minute: next % 60 };
+}
+
+function TimeSlotPicker({
+  label,
+  groups,
+  value,
+  onChange,
+  isDisabled,
+}: {
+  label: string;
+  groups: ReturnType<typeof getStartSlotGroups>;
+  value: TimeSlot;
+  onChange: (slot: TimeSlot) => void;
+  isDisabled?: (slot: TimeSlot) => boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div>
+      <p className="mb-1 text-xs font-medium text-zinc-600">{label}</p>
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex w-full items-center justify-between rounded-lg border border-zinc-300 px-3 py-2 text-left text-sm text-zinc-800 hover:bg-zinc-50"
+        aria-expanded={open}
+      >
+        <span>{formatSlotLabel(value)}</span>
+        <span className="text-xs text-zinc-400">{open ? "閉じる" : "選択"}</span>
+      </button>
+
+      {open && (
+        <div className="mt-2 space-y-1 rounded-lg border border-zinc-200 bg-zinc-50 p-2">
+          {groups.map((group) => (
+            <div
+              key={group.hour}
+              className={`grid gap-1 ${
+                group.slots.length === 1 ? "grid-cols-1" : "grid-cols-4"
+              }`}
+            >
+              {group.slots.map((slot) => {
+                const selected = isSameSlot(slot, value);
+                const disabled = isDisabled?.(slot) ?? false;
+                return (
+                  <button
+                    key={`${slot.hour}:${slot.minute}`}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => {
+                      onChange(slot);
+                      setOpen(false);
+                    }}
+                    className={`rounded px-1 py-1.5 text-[10px] leading-tight transition-colors ${
+                      selected
+                        ? "bg-blue-600 font-medium text-white"
+                        : disabled
+                          ? "cursor-not-allowed bg-white text-zinc-300"
+                          : "border border-zinc-200 bg-white text-zinc-700 hover:bg-blue-50"
+                    }`}
+                    aria-pressed={selected}
+                    title={formatSlotLabel(slot)}
+                  >
+                    {formatSlotLabel(slot)}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ReservationForm({
@@ -44,35 +158,61 @@ export function ReservationForm({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  const initialDate =
+    reservation
+      ? new Date(reservation.start_at)
+      : (defaultStart ?? new Date());
+  const initialStart = defaultStartSlot(
+    reservation ? new Date(reservation.start_at) : defaultStart
+  );
+  const initialEnd = defaultEndSlot(
+    initialStart,
+    reservation ? new Date(reservation.end_at) : defaultEnd
+  );
+
   const [title, setTitle] = useState(reservation?.title ?? "");
   const [memo, setMemo] = useState(reservation?.memo ?? "");
-  const [startAt, setStartAt] = useState(
-    reservation
-      ? toLocalInputValue(new Date(reservation.start_at))
-      : defaultStart
-        ? toLocalInputValue(defaultStart)
-        : ""
-  );
-  const [endAt, setEndAt] = useState(
-    reservation
-      ? toLocalInputValue(new Date(reservation.end_at))
-      : defaultEnd
-        ? toLocalInputValue(defaultEnd)
-        : ""
-  );
+  const [dateValue, setDateValue] = useState(toDateInputValue(initialDate));
+  const [startSlot, setStartSlot] = useState<TimeSlot>(initialStart);
+  const [endSlot, setEndSlot] = useState<TimeSlot>(initialEnd);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
     reservation ? getReservationTags(reservation).map((t) => t.id) : []
   );
+
+  const startGroups = useMemo(() => getStartSlotGroups(), []);
+  const endGroups = useMemo(() => getEndSlotGroups(), []);
+
+  const handleStartChange = (slot: TimeSlot) => {
+    setStartSlot(slot);
+    if (slotToMinutes(endSlot) <= slotToMinutes(slot)) {
+      setEndSlot(defaultEndSlot(slot));
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
+    const { year, month, day } = parseDateInput(dateValue);
+    const start = combineDateAndSlot(year, month, day, startSlot);
+    const end = combineDateAndSlot(year, month, day, endSlot);
+
+    if (!isWeekday(start)) {
+      setError("予約は月曜〜金曜のみ設定できます");
+      return;
+    }
+
+    const validationError = validateReservationTime(start, end);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     const input = {
       title,
       memo,
-      startAt: fromLocalInputValue(startAt).toISOString(),
-      endAt: fromLocalInputValue(endAt).toISOString(),
+      startAt: start.toISOString(),
+      endAt: end.toISOString(),
       tagIds: selectedTagIds,
     };
 
@@ -115,34 +255,37 @@ export function ReservationForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-600">
-            開始
-          </label>
-          <input
-            type="datetime-local"
-            value={startAt}
-            onChange={(e) => setStartAt(e.target.value)}
-            required
-            step={900}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-600">
-            終了
-          </label>
-          <input
-            type="datetime-local"
-            value={endAt}
-            onChange={(e) => setEndAt(e.target.value)}
-            required
-            step={900}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          />
-        </div>
+      <div>
+        <label className="mb-1 block text-xs font-medium text-zinc-600">
+          日付
+        </label>
+        <input
+          type="date"
+          value={dateValue}
+          onChange={(e) => setDateValue(e.target.value)}
+          required
+          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+        />
+        <p className="mt-1 text-[11px] text-zinc-500">
+          予約可能時間: 月曜〜金曜 {BUSINESS_START_HOUR}:00〜
+          {BUSINESS_END_HOUR}:00（15分単位）
+        </p>
       </div>
+
+      <TimeSlotPicker
+        label="開始時刻"
+        groups={startGroups}
+        value={startSlot}
+        onChange={handleStartChange}
+      />
+
+      <TimeSlotPicker
+        label="終了時刻"
+        groups={endGroups}
+        value={endSlot}
+        onChange={setEndSlot}
+        isDisabled={(slot) => slotToMinutes(slot) <= slotToMinutes(startSlot)}
+      />
 
       <div>
         <label className="mb-1 block text-xs font-medium text-zinc-600">

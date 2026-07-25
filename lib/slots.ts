@@ -150,3 +150,60 @@ export function getEndTimeOptions(start: Date): Date[] {
 
   return options;
 }
+
+export type TimeSlot = { hour: number; minute: number };
+
+export type HourSlotGroup = {
+  hour: number;
+  slots: TimeSlot[];
+};
+
+/** 開始時刻候補: 9:00〜17:45（15分刻み） */
+export function getStartSlotGroups(): HourSlotGroup[] {
+  const groups: HourSlotGroup[] = [];
+  for (let hour = BUSINESS_START_HOUR; hour < BUSINESS_END_HOUR; hour++) {
+    const slots: TimeSlot[] = [];
+    for (let minute = 0; minute < 60; minute += SLOT_MINUTES) {
+      slots.push({ hour, minute });
+    }
+    groups.push({ hour, slots });
+  }
+  return groups;
+}
+
+/** 終了時刻候補: 9:00〜18:00（15分刻み）。18時台は 18:00 のみ */
+export function getEndSlotGroups(): HourSlotGroup[] {
+  const groups = getStartSlotGroups();
+  groups.push({
+    hour: BUSINESS_END_HOUR,
+    slots: [{ hour: BUSINESS_END_HOUR, minute: 0 }],
+  });
+  return groups;
+}
+
+export function formatSlotLabel(slot: TimeSlot): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(slot.hour)}:${pad(slot.minute)}`;
+}
+
+export function isSameSlot(a: TimeSlot, b: TimeSlot): boolean {
+  return a.hour === b.hour && a.minute === b.minute;
+}
+
+export function slotToMinutes(slot: TimeSlot): number {
+  return slot.hour * 60 + slot.minute;
+}
+
+export function dateToSlot(date: Date): TimeSlot {
+  const jst = toJst(date);
+  return { hour: jst.getHours(), minute: jst.getMinutes() };
+}
+
+export function combineDateAndSlot(
+  year: number,
+  month: number,
+  day: number,
+  slot: TimeSlot
+): Date {
+  return fromJstComponents(year, month, day, slot.hour, slot.minute);
+}
