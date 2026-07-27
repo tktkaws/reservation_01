@@ -68,25 +68,25 @@ export function MonthView() {
           return (
             <div
               key={day.toISOString()}
+              onClick={() => handleEmptyDayClick(day, dayReservations)}
               className={`flex min-h-24 flex-col bg-white p-2 ${
                 inMonth ? "" : "bg-zinc-50/50"
-              } ${isToday(day) ? "ring-2 ring-inset ring-blue-400" : ""}`}
+              } ${isToday(day) ? "ring-2 ring-inset ring-blue-400" : ""} ${
+                canCreate ? "cursor-pointer hover:bg-blue-50/50" : ""
+              }`}
+              aria-label={`${jst.getMonth() + 1}月${jst.getDate()}日に予約を作成`}
             >
-              <button
-                type="button"
-                onClick={() => handleEmptyDayClick(day, dayReservations)}
-                disabled={!canCreate}
+              <div
                 className={`mb-1 self-start rounded px-1 text-sm font-medium ${
                   inMonth
                     ? weekend
                       ? "text-zinc-400"
                       : "text-zinc-800"
                     : "text-zinc-300"
-                } ${canCreate ? "hover:bg-blue-50" : "cursor-default"}`}
-                aria-label={`${jst.getMonth() + 1}月${jst.getDate()}日に予約を作成`}
+                }`}
               >
                 {jst.getDate()}
-              </button>
+              </div>
 
               {dayReservations.length > 0 && (
                 <div className="flex flex-1 flex-col gap-1">
@@ -98,7 +98,10 @@ export function MonthView() {
                       <button
                         key={r.id}
                         type="button"
-                        onClick={() => openViewPanel(r)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openViewPanel(r);
+                        }}
                         className="w-full truncate rounded border-l-2 px-1.5 py-0.5 text-left text-xs text-zinc-800 hover:opacity-80"
                         style={{
                           borderLeftColor: primaryColor,
@@ -113,14 +116,7 @@ export function MonthView() {
                 </div>
               )}
 
-              {canCreate && dayReservations.length === 0 && (
-                <button
-                  type="button"
-                  onClick={() => handleEmptyDayClick(day, dayReservations)}
-                  className="mt-auto min-h-8 flex-1 cursor-pointer rounded hover:bg-blue-50/50"
-                  aria-label={`${jst.getMonth() + 1}月${jst.getDate()}日に予約を作成`}
-                />
-              )}
+              {dayReservations.length === 0 && <div className="mt-auto min-h-8 flex-1" />}
             </div>
           );
         })}

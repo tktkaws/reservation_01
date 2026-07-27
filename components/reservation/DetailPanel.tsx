@@ -404,6 +404,7 @@ export function DetailPanel() {
         </div>
         <div className="flex-1 overflow-y-auto p-4">
           <ReservationForm
+            key={`${panel.startAt?.toISOString() ?? "none"}-${panel.endAt?.toISOString() ?? "none"}`}
             mode="create"
             defaultStart={panel.startAt}
             defaultEnd={panel.endAt}
