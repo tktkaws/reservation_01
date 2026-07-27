@@ -2,7 +2,7 @@
 
 import { useApp } from "@/components/app/AppContext";
 import type { ViewMode } from "@/lib/types";
-import { formatMonthYear } from "@/lib/dates";
+import { addMonths, formatMonthYear, subMonths } from "@/lib/dates";
 
 const VIEW_LABELS: Record<ViewMode, string> = {
   list: "リスト",
@@ -15,6 +15,7 @@ export function HeaderToolbar({ onMenuClick }: { onMenuClick?: () => void }) {
     setViewMode,
     goToToday,
     currentDate,
+    setCurrentDate,
     currentUser,
     openCreatePanel,
   } = useApp();
@@ -32,9 +33,27 @@ export function HeaderToolbar({ onMenuClick }: { onMenuClick?: () => void }) {
             ☰
           </button>
         )}
-        <h2 className="text-lg font-semibold text-zinc-900">
-          {formatMonthYear(currentDate)}
-        </h2>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+            className="rounded-lg border border-zinc-200 px-2 py-1 text-sm text-zinc-600 hover:bg-zinc-50"
+            aria-label="前月"
+          >
+            ‹
+          </button>
+          <h2 className="min-w-[7.5rem] text-center text-lg font-semibold text-zinc-900">
+            {formatMonthYear(currentDate)}
+          </h2>
+          <button
+            type="button"
+            onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+            className="rounded-lg border border-zinc-200 px-2 py-1 text-sm text-zinc-600 hover:bg-zinc-50"
+            aria-label="翌月"
+          >
+            ›
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
