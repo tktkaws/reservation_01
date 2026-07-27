@@ -10,16 +10,16 @@ export function ListView() {
 
   if (reservations.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center text-sm text-zinc-500">
+      <div className="flex flex-1 items-center justify-center bg-white text-sm text-zinc-500">
         予約がありません
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto bg-white">
       <table className="w-full text-left text-sm">
-        <thead className="sticky top-0 bg-zinc-50 text-xs text-zinc-500">
+        <thead className="sticky top-0 bg-white text-xs text-zinc-500">
           <tr>
             <th className="px-4 py-3 font-medium">日時</th>
             <th className="px-4 py-3 font-medium">タイトル</th>
