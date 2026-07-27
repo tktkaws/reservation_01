@@ -343,7 +343,7 @@ export function ReservationForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50"
+          className="flex-1 rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50"
         >
           キャンセル
         </button>
