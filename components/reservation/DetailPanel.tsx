@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
 import {
   createReservation,
   deleteReservation,
@@ -352,6 +352,62 @@ export function ReservationForm({
   );
 }
 
+function ModalShell({
+  title,
+  onClose,
+  children,
+  footer,
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+  footer?: ReactNode;
+}) {
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button
+        type="button"
+        aria-label="モーダルを閉じる"
+        className="absolute inset-0 bg-black/40"
+        onClick={onClose}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="relative z-10 flex max-h-[min(90vh,720px)] w-full max-w-md flex-col overflow-hidden rounded-xl bg-white shadow-xl"
+      >
+        <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
+          <h3 className="font-semibold text-zinc-900">{title}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg px-2 py-1 text-sm text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+            aria-label="閉じる"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">{children}</div>
+        {footer}
+      </div>
+    </div>
+  );
+}
+
 export function DetailPanel() {
   const {
     panel,
@@ -387,50 +443,34 @@ export function DetailPanel() {
   };
 
   if (panel.mode === "empty") {
-    return (
-      <aside className="flex h-full w-80 shrink-0 flex-col border-l border-zinc-200 bg-zinc-50">
-        <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-zinc-500">
-          予約を選択するか、新規予約を作成してください
-        </div>
-      </aside>
-    );
+    return null;
   }
 
   if (panel.mode === "create") {
     return (
-      <aside className="flex h-full w-80 shrink-0 flex-col border-l border-zinc-200 bg-white">
-        <div className="border-b border-zinc-200 px-4 py-3">
-          <h3 className="font-semibold text-zinc-900">新規予約</h3>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4">
-          <ReservationForm
-            key={`${panel.startAt?.toISOString() ?? "none"}-${panel.endAt?.toISOString() ?? "none"}`}
-            mode="create"
-            defaultStart={panel.startAt}
-            defaultEnd={panel.endAt}
-            onSuccess={closePanel}
-            onCancel={closePanel}
-          />
-        </div>
-      </aside>
+      <ModalShell title="新規予約" onClose={closePanel}>
+        <ReservationForm
+          key={`${panel.startAt?.toISOString() ?? "none"}-${panel.endAt?.toISOString() ?? "none"}`}
+          mode="create"
+          defaultStart={panel.startAt}
+          defaultEnd={panel.endAt}
+          onSuccess={closePanel}
+          onCancel={closePanel}
+        />
+      </ModalShell>
     );
   }
 
   if (panel.mode === "edit") {
     return (
-      <aside className="flex h-full w-80 shrink-0 flex-col border-l border-zinc-200 bg-white">
-        <div className="border-b border-zinc-200 px-4 py-3">
-          <h3 className="font-semibold text-zinc-900">予約を編集</h3>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4">
-          <ReservationForm
-            mode="edit"
-            reservation={panel.reservation}
-            onSuccess={closePanel}
-            onCancel={() => openViewPanel(panel.reservation)}
-          />
-        </div>
-      </aside>
+      <ModalShell title="予約を編集" onClose={closePanel}>
+        <ReservationForm
+          mode="edit"
+          reservation={panel.reservation}
+          onSuccess={closePanel}
+          onCancel={() => openViewPanel(panel.reservation)}
+        />
+      </ModalShell>
     );
   }
 
@@ -439,12 +479,32 @@ export function DetailPanel() {
   const editable = canEdit(reservation);
 
   return (
-    <aside className="flex h-full w-80 shrink-0 flex-col border-l border-zinc-200 bg-white">
-      <div className="border-b border-zinc-200 px-4 py-3">
-        <h3 className="font-semibold text-zinc-900">予約詳細</h3>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <ModalShell
+      title="予約詳細"
+      onClose={closePanel}
+      footer={
+        editable ? (
+          <div className="flex gap-2 border-t border-zinc-200 p-4">
+            <button
+              type="button"
+              onClick={() => openEditPanel(reservation)}
+              className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              編集
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDelete(reservation.id)}
+              disabled={isPending}
+              className="flex-1 rounded-lg border border-red-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+            >
+              削除
+            </button>
+          </div>
+        ) : undefined
+      }
+    >
+      <div className="space-y-4">
         <div>
           <p className="text-xs text-zinc-500">タイトル</p>
           <p className="text-lg font-semibold text-zinc-900">
@@ -506,26 +566,6 @@ export function DetailPanel() {
           </p>
         )}
       </div>
-
-      {editable && (
-        <div className="border-t border-zinc-200 p-4 flex gap-2">
-          <button
-            type="button"
-            onClick={() => openEditPanel(reservation)}
-            className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            編集
-          </button>
-          <button
-            type="button"
-            onClick={() => handleDelete(reservation.id)}
-            disabled={isPending}
-            className="flex-1 rounded-lg border border-red-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
-          >
-            削除
-          </button>
-        </div>
-      )}
-    </aside>
+    </ModalShell>
   );
 }

@@ -7,13 +7,10 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { HeaderToolbar } from "@/components/layout/HeaderToolbar";
 import { MainCalendarView } from "@/components/calendar/MainCalendarView";
 import { DetailPanel } from "@/components/reservation/DetailPanel";
-import { useApp } from "@/components/app/AppContext";
 import type { Profile, Reservation, Tag } from "@/lib/types";
 
 function AppShell() {
-  const { panel } = useApp();
   const [showSidebar, setShowSidebar] = useState(false);
-  const showDetail = panel.mode !== "empty";
 
   return (
     <div className="flex h-screen overflow-hidden bg-zinc-100">
@@ -39,13 +36,7 @@ function AppShell() {
         <MainCalendarView />
       </main>
 
-      <div
-        className={`${
-          showDetail ? "translate-x-0" : "translate-x-full"
-        } fixed inset-y-0 right-0 z-40 transition-transform lg:relative lg:translate-x-0`}
-      >
-        <DetailPanel />
-      </div>
+      <DetailPanel />
     </div>
   );
 }
