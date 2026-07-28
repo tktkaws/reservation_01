@@ -12,5 +12,5 @@ export default async function AdminUsersPage() {
 
   const { data: users } = await fetchUsers();
 
-  return <AdminUsersClient initialUsers={users ?? []} />;
+  return <AdminUsersClient initialUsers={users ?? []} currentUser={currentUser} />;
 }
