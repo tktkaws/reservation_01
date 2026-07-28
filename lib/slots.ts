@@ -111,18 +111,26 @@ export function generateDaySlots(date: Date): Date[] {
   return slots;
 }
 
-export function formatTimeRange(start: Date | string, end: Date | string): string {
+export function formatTimeRange(
+  start: Date | string,
+  end: Date | string,
+  options?: { includeYear?: boolean }
+): string {
+  const includeYear = options?.includeYear ?? true;
   const startDate = typeof start === "string" ? new Date(start) : start;
   const endDate = typeof end === "string" ? new Date(end) : end;
   const startJst = toJst(startDate);
   const endJst = toJst(endDate);
 
   const pad = (n: number) => String(n).padStart(2, "0");
-  const dateStr = `${startJst.getFullYear()}/${pad(startJst.getMonth() + 1)}/${pad(startJst.getDate())}`;
+  const weekday = ["日", "月", "火", "水", "木", "金", "土"][startJst.getDay()];
+  const dateStr = includeYear
+    ? `${startJst.getFullYear()}/${pad(startJst.getMonth() + 1)}/${pad(startJst.getDate())}`
+    : `${pad(startJst.getMonth() + 1)}/${pad(startJst.getDate())}`;
   const startStr = `${pad(startJst.getHours())}:${pad(startJst.getMinutes())}`;
   const endStr = `${pad(endJst.getHours())}:${pad(endJst.getMinutes())}`;
 
-  return `${dateStr} ${startStr} - ${endStr}`;
+  return `${dateStr} (${weekday}) ${startStr} - ${endStr}`;
 }
 
 export function addSlotDuration(start: Date, slots: number): Date {
