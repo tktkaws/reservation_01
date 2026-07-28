@@ -2,7 +2,13 @@
 
 import { addMinutes } from "date-fns";
 import { getMonthDays, isSameMonth, isToday } from "@/lib/dates";
-import { generateDaySlots, isWeekday, toJst } from "@/lib/slots";
+import {
+  dateToSlot,
+  formatSlotLabel,
+  generateDaySlots,
+  isWeekday,
+  toJst,
+} from "@/lib/slots";
 import {
   getReservationTags,
   getReservationsForDay,
@@ -10,7 +16,7 @@ import {
 import { useApp } from "@/components/app/AppContext";
 import type { Reservation } from "@/lib/types";
 
-const WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"];
+const WEEKDAYS = ["月", "火", "水", "木", "金"];
 
 export function MonthView() {
   const {
@@ -21,7 +27,7 @@ export function MonthView() {
     currentUser,
   } = useApp();
 
-  const monthDays = getMonthDays(currentDate);
+  const monthDays = getMonthDays(currentDate).filter((day) => isWeekday(day));
 
   const handleEmptyDayClick = (day: Date, dayReservations: Reservation[]) => {
     if (!currentUser || !isWeekday(day)) return;
@@ -48,7 +54,7 @@ export function MonthView() {
 
   return (
     <div className="flex-1 overflow-auto p-4">
-      <div className="grid grid-cols-7 items-stretch gap-px overflow-hidden rounded-lg border border-zinc-200 bg-zinc-200">
+      <div className="grid grid-cols-5 items-stretch gap-px overflow-hidden rounded-lg border border-zinc-200 bg-zinc-200">
         {WEEKDAYS.map((d) => (
           <div
             key={d}
@@ -62,7 +68,6 @@ export function MonthView() {
           const jst = toJst(day);
           const dayReservations = getReservationsForDay(reservations, day);
           const inMonth = isSameMonth(day, currentDate);
-          const weekend = jst.getDay() === 0 || jst.getDay() === 6;
           const canCreate = Boolean(currentUser && isWeekday(day));
 
           return (
@@ -78,11 +83,7 @@ export function MonthView() {
             >
               <div
                 className={`mb-1 self-start rounded px-1 text-sm font-medium ${
-                  inMonth
-                    ? weekend
-                      ? "text-zinc-400"
-                      : "text-zinc-800"
-                    : "text-zinc-300"
+                  inMonth ? "text-zinc-800" : "text-zinc-300"
                 }`}
               >
                 {jst.getDate()}
@@ -93,6 +94,9 @@ export function MonthView() {
                   {dayReservations.map((r) => {
                     const tags = getReservationTags(r);
                     const primaryColor = tags[0]?.color ?? "#3B82F6";
+                    const startLabel = formatSlotLabel(
+                      dateToSlot(new Date(r.start_at))
+                    );
 
                     return (
                       <button
@@ -102,21 +106,26 @@ export function MonthView() {
                           e.stopPropagation();
                           openViewPanel(r);
                         }}
-                        className="w-full truncate rounded border-l-2 px-1.5 py-0.5 text-left text-xs text-zinc-800 hover:opacity-80"
+                        className="flex w-full items-center gap-1 truncate rounded border-l-2 px-1.5 py-0.5 text-left text-xs text-zinc-800 hover:opacity-80"
                         style={{
                           borderLeftColor: primaryColor,
                           backgroundColor: `${primaryColor}18`,
                         }}
-                        title={r.title}
+                        title={`${startLabel} ${r.title}`}
                       >
-                        {r.title}
+                        <span className="shrink-0 font-medium text-zinc-600">
+                          {startLabel}
+                        </span>
+                        <span className="min-w-0 truncate">{r.title}</span>
                       </button>
                     );
                   })}
                 </div>
               )}
 
-              {dayReservations.length === 0 && <div className="mt-auto min-h-8 flex-1" />}
+              {dayReservations.length === 0 && (
+                <div className="mt-auto min-h-8 flex-1" />
+              )}
             </div>
           );
         })}
