@@ -13,6 +13,7 @@ export type Tag = {
   id: string;
   name: string;
   color: string;
+  sort_order?: number;
 };
 
 export type Reservation = {

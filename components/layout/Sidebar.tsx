@@ -123,12 +123,20 @@ export function Sidebar() {
               )}
             </div>
             {currentUser.role === "admin" && (
-              <Link
-                href="/admin/users"
-                className="block w-full rounded-lg border border-zinc-200 px-3 py-2 text-center text-sm text-zinc-700 hover:bg-zinc-50"
-              >
-                ユーザー管理
-              </Link>
+              <>
+                <Link
+                  href="/admin/users"
+                  className="block w-full rounded-lg border border-zinc-200 px-3 py-2 text-center text-sm text-zinc-700 hover:bg-zinc-50"
+                >
+                  ユーザー管理
+                </Link>
+                <Link
+                  href="/admin/tags"
+                  className="block w-full rounded-lg border border-zinc-200 px-3 py-2 text-center text-sm text-zinc-700 hover:bg-zinc-50"
+                >
+                  タグ管理
+                </Link>
+              </>
             )}
             <form action={signOut}>
               <button
