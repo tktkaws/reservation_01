@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import {
   createUser,
@@ -8,6 +8,62 @@ import {
   updateUser,
 } from "@/app/actions/users";
 import type { Profile, UserRole } from "@/lib/types";
+
+function ModalShell({
+  title,
+  onClose,
+  children,
+  footer,
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+  footer?: ReactNode;
+}) {
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button
+        type="button"
+        aria-label="モーダルを閉じる"
+        className="absolute inset-0 bg-black/40"
+        onClick={onClose}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="relative z-10 flex max-h-[min(90vh,720px)] w-full max-w-md flex-col overflow-hidden rounded-xl bg-white shadow-xl"
+      >
+        <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
+          <h3 className="font-semibold text-zinc-900">{title}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg px-2 py-1 text-sm text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+            aria-label="閉じる"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">{children}</div>
+        {footer}
+      </div>
+    </div>
+  );
+}
 
 function UserForm({
   user,
@@ -59,80 +115,78 @@ function UserForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-1 flex-col">
-      <div className="flex-1 space-y-4 overflow-y-auto p-4">
-        {mode === "create" && (
-          <>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-600">
-                メールアドレス
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-600">
-                パスワード
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-              />
-            </div>
-          </>
-        )}
-        <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-600">
-            名前
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-600">
-            部署
-          </label>
-          <input
-            type="text"
-            value={department}
-            onChange={(e) => setDepartment(e.target.value)}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-600">
-            ロール
-          </label>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as UserRole)}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          >
-            <option value="user">一般ユーザー</option>
-            <option value="admin">管理者</option>
-          </select>
-        </div>
-        {error && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-            {error}
-          </p>
-        )}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {mode === "create" && (
+        <>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-zinc-600">
+              メールアドレス
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-zinc-600">
+              パスワード
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            />
+          </div>
+        </>
+      )}
+      <div>
+        <label className="mb-1 block text-xs font-medium text-zinc-600">
+          名前
+        </label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+        />
       </div>
-      <div className="flex gap-2 border-t border-zinc-200 p-4">
+      <div>
+        <label className="mb-1 block text-xs font-medium text-zinc-600">
+          部署
+        </label>
+        <input
+          type="text"
+          value={department}
+          onChange={(e) => setDepartment(e.target.value)}
+          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-xs font-medium text-zinc-600">
+          ロール
+        </label>
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value as UserRole)}
+          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+        >
+          <option value="user">一般ユーザー</option>
+          <option value="admin">管理者</option>
+        </select>
+      </div>
+      {error && (
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+          {error}
+        </p>
+      )}
+      <div className="flex gap-2 pt-2">
         <button
           type="submit"
           disabled={isPending}
@@ -143,7 +197,7 @@ function UserForm({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-600"
+          className="flex-1 rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50"
         >
           キャンセル
         </button>
@@ -183,22 +237,35 @@ export function UserDetailPanel({
   };
 
   if (mode === "empty") {
-    return (
-      <aside className="flex h-full w-80 shrink-0 flex-col border-l border-zinc-200 bg-zinc-50">
-        <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-zinc-500">
-          ユーザーを選択するか、新規作成してください
-        </div>
-      </aside>
-    );
+    return null;
   }
 
   if (mode === "view" && user) {
     return (
-      <aside className="flex h-full w-80 shrink-0 flex-col border-l border-zinc-200 bg-white">
-        <div className="border-b border-zinc-200 px-4 py-3">
-          <h3 className="font-semibold text-zinc-900">ユーザー詳細</h3>
-        </div>
-        <div className="flex-1 space-y-4 p-4">
+      <ModalShell
+        title="ユーザー詳細"
+        onClose={onClose}
+        footer={
+          <div className="flex gap-2 border-t border-zinc-200 p-4">
+            <button
+              type="button"
+              onClick={onEdit}
+              className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+            >
+              編集
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isPending}
+              className="flex-1 rounded-lg border border-red-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+            >
+              削除
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
           <div>
             <p className="text-xs text-zinc-500">名前</p>
             <p className="text-lg font-semibold">{user.name}</p>
@@ -219,34 +286,15 @@ export function UserDetailPanel({
             </p>
           )}
         </div>
-        <div className="flex gap-2 border-t border-zinc-200 p-4">
-          <button
-            type="button"
-            onClick={onEdit}
-            className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-          >
-            編集
-          </button>
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={isPending}
-            className="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-          >
-            削除
-          </button>
-        </div>
-      </aside>
+      </ModalShell>
     );
   }
 
   return (
-    <aside className="flex h-full w-80 shrink-0 flex-col border-l border-zinc-200 bg-white">
-      <div className="border-b border-zinc-200 px-4 py-3">
-        <h3 className="font-semibold text-zinc-900">
-          {mode === "create" ? "ユーザー作成" : "ユーザー編集"}
-        </h3>
-      </div>
+    <ModalShell
+      title={mode === "create" ? "ユーザー作成" : "ユーザー編集"}
+      onClose={onClose}
+    >
       <UserForm
         key={`${mode}-${user?.id ?? "new"}`}
         user={user}
@@ -254,7 +302,7 @@ export function UserDetailPanel({
         onClose={onClose}
         onRefresh={onRefresh}
       />
-    </aside>
+    </ModalShell>
   );
 }
 
@@ -278,6 +326,11 @@ export function AdminUsersClient({
   const selectUser = (user: Profile) => {
     setSelectedUser(user);
     setPanelMode("view");
+  };
+
+  const closePanel = () => {
+    setPanelMode("empty");
+    setSelectedUser(null);
   };
 
   return (
@@ -306,9 +359,9 @@ export function AdminUsersClient({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-white">
           <table className="w-full text-left text-sm">
-            <thead className="sticky top-0 bg-zinc-50 text-xs text-zinc-500">
+            <thead className="sticky top-0 bg-white text-xs text-zinc-500">
               <tr>
                 <th className="px-4 py-3 font-medium">名前</th>
                 <th className="px-4 py-3 font-medium">部署</th>
@@ -349,10 +402,7 @@ export function AdminUsersClient({
       <UserDetailPanel
         user={selectedUser}
         mode={panelMode}
-        onClose={() => {
-          setPanelMode("empty");
-          setSelectedUser(null);
-        }}
+        onClose={closePanel}
         onEdit={() => {
           if (selectedUser) {
             setPanelMode("edit");
