@@ -34,24 +34,58 @@ export function TagFilter({
       </div>
 
       <div className="space-y-1">
-        {tags.map((tag) => (
-          <label
-            key={tag.id}
-            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-zinc-50"
-          >
-            <input
-              type="checkbox"
-              checked={selectedTagIds.includes(tag.id)}
-              onChange={() => onToggle(tag.id)}
-              className="rounded border-zinc-300"
-            />
-            <span
-              className="h-2.5 w-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: tag.color }}
-            />
-            <span className="text-sm text-zinc-700">{tag.name}</span>
-          </label>
-        ))}
+        {tags.map((tag) => {
+          const checked = selectedTagIds.includes(tag.id);
+
+          return (
+            <label
+              key={tag.id}
+              className="flex cursor-pointer items-center gap-2.5 rounded px-2 py-1.5 hover:bg-zinc-50"
+            >
+              <span className="relative inline-flex h-4 w-4 shrink-0 items-center justify-center">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => onToggle(tag.id)}
+                  className="peer absolute inset-0 z-10 m-0 h-full w-full cursor-pointer opacity-0"
+                />
+                <span
+                  className="flex h-4 w-4 items-center justify-center rounded-[3px] border-2 transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-1 peer-focus-visible:outline-blue-500"
+                  style={
+                    checked
+                      ? {
+                          backgroundColor: tag.color,
+                          borderColor: tag.color,
+                        }
+                      : {
+                          backgroundColor: "transparent",
+                          borderColor: tag.color,
+                        }
+                  }
+                  aria-hidden
+                >
+                  {checked && (
+                    <svg
+                      viewBox="0 0 12 12"
+                      className="h-2.5 w-2.5"
+                      fill="none"
+                      aria-hidden
+                    >
+                      <path
+                        d="M2.5 6.2L4.8 8.5L9.5 3.5"
+                        stroke="white"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </span>
+              </span>
+              <span className="text-sm text-zinc-700">{tag.name}</span>
+            </label>
+          );
+        })}
       </div>
 
       {isAdmin && (
