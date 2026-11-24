@@ -22,6 +22,7 @@ export function MonthView() {
   const {
     currentDate,
     reservations,
+    tags: sidebarTags,
     openCreatePanel,
     openViewPanel,
     currentUser,
@@ -92,7 +93,7 @@ export function MonthView() {
               {dayReservations.length > 0 && (
                 <div className="flex flex-1 flex-col gap-1">
                   {dayReservations.map((r) => {
-                    const tags = getReservationTags(r);
+                    const tags = getReservationTags(r, sidebarTags);
                     const primaryColor = tags[0]?.color ?? "#3B82F6";
                     const startLabel = formatSlotLabel(
                       dateToSlot(new Date(r.start_at))

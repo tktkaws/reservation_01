@@ -3,12 +3,12 @@
 import { formatTimeRange } from "@/lib/slots";
 import { getReservationTags } from "@/lib/reservations";
 import { useApp } from "@/components/app/AppContext";
-import type { Reservation } from "@/lib/types";
+import type { Reservation, Tag } from "@/lib/types";
 
 const CELL_PAD = "px-4 py-3";
 
 export function ListView() {
-  const { reservations, openViewPanel } = useApp();
+  const { reservations, tags, openViewPanel } = useApp();
 
   if (reservations.length === 0) {
     return (
@@ -25,6 +25,7 @@ export function ListView() {
           <ReservationCard
             key={reservation.id}
             reservation={reservation}
+            tags={getReservationTags(reservation, tags)}
             onClick={() => openViewPanel(reservation)}
           />
         ))}
@@ -44,6 +45,7 @@ export function ListView() {
             <ReservationRow
               key={reservation.id}
               reservation={reservation}
+              tags={getReservationTags(reservation, tags)}
               onClick={() => openViewPanel(reservation)}
             />
           ))}
@@ -55,12 +57,13 @@ export function ListView() {
 
 function ReservationCard({
   reservation,
+  tags,
   onClick,
 }: {
   reservation: Reservation;
+  tags: Tag[];
   onClick: () => void;
 }) {
-  const tags = getReservationTags(reservation);
   const timeLabel = formatTimeRange(reservation.start_at, reservation.end_at, {
     includeYear: false,
   });
@@ -104,13 +107,13 @@ function ReservationCard({
 
 function ReservationRow({
   reservation,
+  tags,
   onClick,
 }: {
   reservation: Reservation;
+  tags: Tag[];
   onClick: () => void;
 }) {
-  const tags = getReservationTags(reservation);
-
   return (
     <tr
       onClick={onClick}

@@ -1,7 +1,8 @@
 import type { Reservation, Tag } from "@/lib/types";
 
-export function getReservationTags(reservation: Reservation): Tag[] {
-  return reservation.reservation_tags?.map((rt) => rt.tags) ?? [];
+export function getReservationTags(reservation: Reservation, sidebarTags: Tag[]): Tag[] {
+  const assignedIds = new Set(reservation.reservation_tags?.map(({ tags }) => tags.id));
+  return sidebarTags.filter((tag) => assignedIds.has(tag.id));
 }
 
 export function reservationOverlapsSlot(
