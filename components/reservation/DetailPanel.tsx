@@ -177,7 +177,7 @@ export function ReservationForm({
   const [startSlot, setStartSlot] = useState<TimeSlot>(initialStart);
   const [endSlot, setEndSlot] = useState<TimeSlot>(initialEnd);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
-    reservation ? getReservationTags(reservation).map((t) => t.id) : []
+    reservation?.reservation_tags?.map(({ tags }) => tags.id) ?? []
   );
 
   const startGroups = useMemo(() => getStartSlotGroups(), []);
@@ -356,6 +356,7 @@ export function ReservationForm({
 export function DetailPanel() {
   const {
     panel,
+    tags: sidebarTags,
     closePanel,
     openEditPanel,
     openViewPanel,
@@ -420,7 +421,7 @@ export function DetailPanel() {
   }
 
   const reservation = panel.reservation;
-  const tags = getReservationTags(reservation);
+  const tags = getReservationTags(reservation, sidebarTags);
   const editable = canEdit(reservation);
 
   return (
