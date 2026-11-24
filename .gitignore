@@ -39,5 +39,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-_docs/sample-users.md
-_docs/specification.md
+_docs
